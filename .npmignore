@@ -1,0 +1,4 @@
+# Ignore only libs directory
+libs/
+!package.json
+!README.md 
