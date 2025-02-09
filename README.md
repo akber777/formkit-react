@@ -272,6 +272,3 @@ FormKit provides comprehensive error handling through the `onError` prop:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-MIT License - feel free to use this in your projects!
