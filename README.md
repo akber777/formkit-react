@@ -53,7 +53,7 @@ function LoginComponent() {
 | `onSubmit`    | `(data: T) => void`                      | Callback before form submission                  |
 | `onSuccess`   | `(response: any) => void`                | Callback on successful submission                |
 | `onError`     | `(error: any) => void`                   | Callback on submission error                     |
-| `body`        | `T`                                      | Initial form data                                |
+| `initalData`        | `T & Record<string,any>`                                | Initial form data                                |
 | `customFetch` | `(data: T) => Promise<any>`              | Custom fetch function                            |
 | `submitText`  | `string`                                 | Text for submit button (default: "Submit")       |
 | `loadingText` | `string`                                 | Text while submitting (default: "Submitting...") |
@@ -220,7 +220,7 @@ function ProfileEditor() {
   };
 
   return (
-    <FormKit<ProfileForm> url="/api/profile" action="PATCH" body={initialData}>
+    <FormKit<ProfileForm> url="/api/profile" action="PATCH" initalData={initialData}>
       <input name="username" type="text" />
       <textarea name="bio" />
     </FormKit>

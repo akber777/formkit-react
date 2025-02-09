@@ -7,7 +7,7 @@ interface Props<T extends Record<string, any> = Record<string, any>> {
     onSubmit?: (data: T) => void;
     onSuccess?: (response: any) => void;
     onError?: (error: any) => void;
-    body?: T;
+    initalData?: T & Record<string, any>;
     customFetch?: (data: T) => Promise<any>;
     submitText?: string;
     loadingText?: string;
@@ -34,21 +34,40 @@ export default function FormKit<
         onSubmit,
         onSuccess,
         onError,
-        body,
+        initalData,
         customFetch,
         submitText = "Submit",
         loadingText = "Submitting...",
     } = rest;
     const [loading, setLoading] = React.useState(false);
-    const [formData, setFormData] = React.useState<T>((body || {}) as T);
-
+    const [formData, setFormData] = React.useState<T>((initalData || {}) as T);
 
     React.useEffect(() => {
-        if (body)
-            setFormData(body);
-    }, [body]);
+        if (initalData) {
+            Object.entries(initalData).forEach(([name, value]) => {
+                const element = document.querySelector(`[name="${name}"]`) as HTMLElement;
+                if (element) {
+                    if (element instanceof HTMLSelectElement) {
+                        element.value = value;
+                    } else if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+                        element.value = value;
+                    }
+                }
 
+                const controllerElement = document.querySelector(`[data-formkit-controller][data-name="${name}"]`);
+                if (controllerElement) {
+                    controllerElement.setAttribute('data-value', typeof value === 'object' ? JSON.stringify(value) : String(value));
 
+                    const event = new CustomEvent('formkit:setValue', {
+                        detail: { value }
+                    });
+                    controllerElement.dispatchEvent(event);
+                }
+            });
+
+            setFormData((prev) => ({ ...prev, ...initalData }));
+        }
+    }, [initalData]);
 
     const handleFormChange = (name: keyof T, value: any) => {
         setFormData((prev) => ({
@@ -62,53 +81,52 @@ export default function FormKit<
         setLoading(true);
         let submitData: T;
 
-        if (!body) {
-            const formElement = e.target as HTMLFormElement;
-            const formInputs = Array.from(
-                formElement.querySelectorAll("*")
-            ).filter(element => {
-                const el = element as HTMLElement;
-                return (
-                    (el.hasAttribute('name') &&
-                        (
-                            el instanceof HTMLInputElement ||
-                            el instanceof HTMLSelectElement ||
-                            el instanceof HTMLTextAreaElement
-                        )) ||
-                    el.hasAttribute('data-formkit-controller')
-                );
-            });
+        const formElement = e.target as HTMLFormElement;
+        const formInputs = Array.from(
+            formElement.querySelectorAll("*")
+        ).filter(element => {
+            const el = element as HTMLElement;
+            return (
+                (el.hasAttribute('name') &&
+                    (
+                        el instanceof HTMLInputElement ||
+                        el instanceof HTMLSelectElement ||
+                        el instanceof HTMLTextAreaElement
+                    )) ||
+                el.hasAttribute('data-formkit-controller')
+            );
+        });
 
-            const newFormData = {} as T;
+        const newFormData = {} as T;
 
-            formInputs.forEach((element) => {
-                const input = element as HTMLElement;
-                const name = input.getAttribute('name') || input.getAttribute('data-name');
+        formInputs.forEach((element) => {
+            const input = element as HTMLElement;
+            const name = input.getAttribute('name') || input.getAttribute('data-name');
 
-                if (name) {
-                    let value;
+            if (name) {
+                let value;
 
-                    if (input.hasAttribute('data-formkit-controller')) {
-                        try {
-                            value = JSON.parse(input.getAttribute('data-value') || '');
-                        } catch {
-                            value = input.getAttribute('data-value');
-                        }
-                    } else {
-                        value = (input as HTMLInputElement).value;
+                if (input.hasAttribute('data-formkit-controller')) {
+                    try {
+                        value = JSON.parse(input.getAttribute('data-value') || '');
+                    } catch {
+                        value = input.getAttribute('data-value');
                     }
-
-                    if (value !== undefined) {
-                        (newFormData as Record<keyof T, string>)[name as keyof T] = value;
-                    }
+                } else {
+                    value = (input as HTMLInputElement).value;
                 }
-            });
 
-            submitData = newFormData;
-            setFormData(newFormData);
-        } else {
-            submitData = { ...body, ...formData };
-        }
+                if (value !== undefined) {
+                    (newFormData as Record<keyof T, string>)[name as keyof T] = value;
+                }
+            }
+        });
+
+        submitData = {
+            ...(initalData || {}),
+            ...formData,
+            ...newFormData
+        };
 
         try {
             onSubmit?.(submitData);
@@ -167,10 +185,11 @@ export default function FormKit<
                     React.isValidElement<FormChildProps<T>>(child) &&
                     child.props.name
                 ) {
+                    const value = formData[child.props.name as keyof T];
                     return React.cloneElement(child, {
-                        onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                        onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
                             handleFormChange(child.props.name as keyof T, e.target.value),
-                        value: formData[child.props.name as keyof T] || "",
+                        value: value !== undefined ? String(value) : "",
                     });
                 }
                 return child;
@@ -181,7 +200,5 @@ export default function FormKit<
                 </button>
             )}
         </form>
-
-
     );
 }
