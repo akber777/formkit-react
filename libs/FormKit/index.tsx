@@ -1,4 +1,4 @@
-import React from "react";
+import React, { HTMLAttributes } from "react";
 
 interface Props<T extends Record<string, any> = Record<string, any>> {
     url?: string;
@@ -27,7 +27,7 @@ interface FormChildProps<T> {
 
 export default function FormKit<
     T extends Record<string, any> = Record<string, any>
->({ children, ...rest }: ValidateProps<T>) {
+>({ children, ...rest }: ValidateProps<T> & HTMLAttributes<HTMLFormElement>) {
     const {
         url,
         action = "POST",
@@ -39,6 +39,7 @@ export default function FormKit<
         submitText = "Submit",
         loadingText = "Submitting...",
     } = rest;
+
     const [loading, setLoading] = React.useState(false);
     const [formData, setFormData] = React.useState<T>((initalData || {}) as T);
 
@@ -179,6 +180,7 @@ export default function FormKit<
             method={action}
             onSubmit={handleSubmit}
             autoComplete="off"
+            {...rest}
         >
             {React.Children.map(children, (child) => {
                 if (

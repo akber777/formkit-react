@@ -23,7 +23,7 @@ npm install formkit-react
 ## Basic Usage
 
 ```tsx
-import FormKit from "formkit-react";
+import { FormKit } from "formkit-react";
 
 interface LoginForm {
   email: string;
@@ -65,8 +65,8 @@ FormKit provides a `FormKitController` component that makes it easy to integrate
 ### Controller Usage
 
 ```tsx
-import FormKit from "formkit-react";
-import FormKitController from "formkit-react/controller";
+import { FormKit } from "formkit-react";
+import { FormKitController } from "formkit-react/controller";
 import DatePicker from "react-third-party-datepicker";
 import Select from "react-third-party-select";
 
