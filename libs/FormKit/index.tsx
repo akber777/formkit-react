@@ -1,7 +1,7 @@
-import Listener from "../../utils/listener.utils";
+import Listener from "../utils/listener.utils";
 import React, { FormEvent } from "react";
 
-type ListenerType = "isFetching" | "isError" | "isDone" | "submitData" | "reset"
+export type ListenerType = "isFetching" | "isError" | "isDone" | "submitData" | "reset"
 
 interface Props<T extends Record<string, any> = Record<string, any>> {
     url?: string;
@@ -29,35 +29,6 @@ interface FormChildProps<T> {
     value?: string;
 }
 
-
-
-export function useFormKit() {
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [error, setError] = React.useState<unknown>();
-
-    const reset = (params?: any) => {
-        Listener.emit("reset", params)
-    }
-
-    Listener.on<ListenerType>("isFetching", () => {
-        setIsLoading(true)
-    })
-
-    Listener.on<ListenerType>("isError", (e) => {
-        setIsLoading(false)
-        setError(e)
-    })
-
-    Listener.on<ListenerType>("isDone", () => {
-        setIsLoading(false)
-    })
-
-    return {
-        isLoading,
-        error,
-        reset
-    };
-}
 
 export default function FormKit<
     T extends Record<string, any> = Record<string, any>
