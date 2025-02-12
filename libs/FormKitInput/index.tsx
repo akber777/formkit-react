@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface InputProps {
+interface Props {
     name: string;
     label?: string;
     type?: string;
@@ -10,7 +10,7 @@ interface InputProps {
     pattern?: string;
 }
 
-export default function EasyInput({
+export default function FormKitInput({
     name,
     label,
     type = "text",
@@ -18,7 +18,7 @@ export default function EasyInput({
     placeholder,
     defaultValue,
     pattern,
-}: InputProps) {
+}: Props) {
     return (
         <div className="formkit-input-container">
             {label && (

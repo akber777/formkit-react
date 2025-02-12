@@ -58,6 +58,43 @@ function LoginComponent() {
 | `submitText`  | `string`                                 | Text for submit button (default: "Submit")       |
 | `loadingText` | `string`                                 | Text while submitting (default: "Submitting...") |
 
+## useFormKit Hook
+
+FormKit provides a `useFormKit` hook to manage form state and interactions programmatically.
+
+### Usage
+
+```tsx
+import { useFormKit } from "formkit-react";
+
+interface ProfileForm {
+  username: string;
+  bio: string;
+}
+
+function ProfileFormComponent() {
+  const { isLoading, error, reset } = useFormKit();
+
+  return (
+    <form>
+      <button type="button" onClick={() => reset()}>Reset Form</button>
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Updating..." : "Update Profile"}
+      </button>
+      {error && <p className="error">{String(error)}</p>}
+    </form>
+  );
+}
+```
+
+### Hook Return Values
+
+| Return Value  | Type                          | Description                                        |
+| ------------- | ----------------------------- | -------------------------------------------------- |
+| `isLoading`   | `boolean`                      | Indicates if the form is being submitted          |
+| `error`       | `unknown`                      | Error object if submission fails                 |
+| `reset`       | `(params?: any) => void`       | Function to reset the form state                 |
+
 ## Form Controllers
 
 FormKit provides a `FormKitController` component that makes it easy to integrate third-party form components. This controller handles the value management and data synchronization with the main form.

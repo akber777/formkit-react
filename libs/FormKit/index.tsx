@@ -1,4 +1,7 @@
-import React, { HTMLAttributes } from "react";
+import Listener from "../../utils/listener.utils";
+import React, { FormEvent } from "react";
+
+type ListenerType = "isFetching" | "isError" | "isDone" | "submitData" | "reset"
 
 interface Props<T extends Record<string, any> = Record<string, any>> {
     url?: string;
@@ -11,6 +14,7 @@ interface Props<T extends Record<string, any> = Record<string, any>> {
     customFetch?: (data: T) => Promise<any>;
     submitText?: string;
     loadingText?: string;
+    formData?: boolean;
 }
 
 type ValidateProps<T extends Record<string, any>> = Props<T> &
@@ -25,9 +29,39 @@ interface FormChildProps<T> {
     value?: string;
 }
 
+
+
+export function useFormKit() {
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [error, setError] = React.useState<unknown>();
+
+    const reset = (params?: any) => {
+        Listener.emit("reset", params)
+    }
+
+    Listener.on<ListenerType>("isFetching", () => {
+        setIsLoading(true)
+    })
+
+    Listener.on<ListenerType>("isError", (e) => {
+        setIsLoading(false)
+        setError(e)
+    })
+
+    Listener.on<ListenerType>("isDone", () => {
+        setIsLoading(false)
+    })
+
+    return {
+        isLoading,
+        error,
+        reset
+    };
+}
+
 export default function FormKit<
     T extends Record<string, any> = Record<string, any>
->({ children, ...rest }: ValidateProps<T> & HTMLAttributes<HTMLFormElement>) {
+>({ children, ...rest }: ValidateProps<T>) {
     const {
         url,
         action = "POST",
@@ -39,9 +73,146 @@ export default function FormKit<
         submitText = "Submit",
         loadingText = "Submitting...",
     } = rest;
-
     const [loading, setLoading] = React.useState(false);
     const [formData, setFormData] = React.useState<T>((initalData || {}) as T);
+
+    const getFormData = (formElement: HTMLFormElement) => {
+        const formInputs = Array.from(
+            formElement.querySelectorAll("*")
+        ).filter(element => {
+            const el = element as HTMLElement;
+            return (
+                (el.hasAttribute('name') &&
+                    (
+                        el instanceof HTMLInputElement ||
+                        el instanceof HTMLSelectElement ||
+                        el instanceof HTMLTextAreaElement
+                    )) ||
+                el.hasAttribute('data-formkit-controller')
+            );
+        });
+
+        if (rest.formData) {
+            return new FormData(formElement);
+        }
+
+        const newFormData = {} as T;
+
+        formInputs.forEach((element) => {
+            const input = element as HTMLElement;
+            const name = input.getAttribute('name') || input.getAttribute('data-name');
+
+            if (!name) return;
+
+            let value;
+
+            if (input.hasAttribute('data-formkit-controller')) {
+                try {
+                    value = JSON.parse(input.getAttribute('data-value') || '');
+                } catch {
+                    value = input.getAttribute('data-value');
+                }
+            } else if (input instanceof HTMLInputElement && input.type === 'file') {
+                return;
+            } else {
+                value = (input as HTMLInputElement).value;
+            }
+
+            if (value !== undefined) {
+                (newFormData as Record<keyof T, string>)[name as keyof T] = value;
+            }
+        });
+
+        return {
+            ...(initalData || {}),
+            ...formData,
+            ...newFormData
+        };
+    };
+
+    const resetFormElements = (defaultValues: Record<string, any> = {}) => {
+        const formElement = document.querySelector('form');
+        if (!formElement) return;
+
+        const formInputs = Array.from(
+            formElement.querySelectorAll("*")
+        ).filter(element => {
+            const el = element as HTMLElement;
+            return (
+                (el.hasAttribute('name') &&
+                    (
+                        el instanceof HTMLInputElement ||
+                        el instanceof HTMLSelectElement ||
+                        el instanceof HTMLTextAreaElement
+                    )) ||
+                el.hasAttribute('data-formkit-controller')
+            );
+        });
+
+        formInputs.forEach((element) => {
+            const input = element as HTMLElement;
+            const name = input.getAttribute('name') || input.getAttribute('data-name');
+            const defaultValue = name ? defaultValues[name] : undefined;
+
+            if (input.hasAttribute('data-formkit-controller')) {
+                const valueToSet = defaultValue !== undefined ?
+                    (typeof defaultValue === 'object' ? JSON.stringify(defaultValue) : String(defaultValue))
+                    : '';
+                input.setAttribute('data-value', valueToSet);
+                const event = new CustomEvent('formkit:setValue', {
+                    detail: { value: defaultValue !== undefined ? defaultValue : '' }
+                });
+                input.dispatchEvent(event);
+            } else if (input instanceof HTMLInputElement) {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = defaultValue === true;
+                } else {
+                    input.value = defaultValue !== undefined ? String(defaultValue) : '';
+                }
+            } else if (input instanceof HTMLSelectElement) {
+                if (defaultValue !== undefined) {
+                    input.value = String(defaultValue);
+                } else {
+                    input.selectedIndex = 0;
+                }
+            } else if (input instanceof HTMLTextAreaElement) {
+                input.value = defaultValue !== undefined ? String(defaultValue) : '';
+            }
+        });
+
+        setFormData(defaultValues as T);
+    };
+
+    Listener.on<ListenerType>("reset", (params: any) => {
+        if (typeof params === "object" && params !== null) {
+            setFormData((prev) => ({
+                ...prev,
+                ...params
+            }));
+
+            Object.entries(params).forEach(([name, value]) => {
+                const element = document.querySelector(`[name="${name}"]`) as HTMLElement;
+                if (element) {
+                    if (element instanceof HTMLSelectElement) {
+                        element.value = String(value);
+                    } else if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+                        element.value = String(value);
+                    }
+                }
+
+                const controllerElement = document.querySelector(`[data-formkit-controller][data-name="${name}"]`);
+                if (controllerElement) {
+                    controllerElement.setAttribute('data-value', typeof value === 'object' ? JSON.stringify(value) : String(value));
+                    const event = new CustomEvent('formkit:setValue', {
+                        detail: { value }
+                    });
+                    controllerElement.dispatchEvent(event);
+                }
+            });
+        } else {
+            resetFormElements(initalData || {});
+        }
+    });
 
     React.useEffect(() => {
         if (initalData) {
@@ -80,72 +251,28 @@ export default function FormKit<
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
-        let submitData: T;
+        Listener.emit('isFetching');
 
         const formElement = e.target as HTMLFormElement;
-        const formInputs = Array.from(
-            formElement.querySelectorAll("*")
-        ).filter(element => {
-            const el = element as HTMLElement;
-            return (
-                (el.hasAttribute('name') &&
-                    (
-                        el instanceof HTMLInputElement ||
-                        el instanceof HTMLSelectElement ||
-                        el instanceof HTMLTextAreaElement
-                    )) ||
-                el.hasAttribute('data-formkit-controller')
-            );
-        });
-
-        const newFormData = {} as T;
-
-        formInputs.forEach((element) => {
-            const input = element as HTMLElement;
-            const name = input.getAttribute('name') || input.getAttribute('data-name');
-
-            if (name) {
-                let value;
-
-                if (input.hasAttribute('data-formkit-controller')) {
-                    try {
-                        value = JSON.parse(input.getAttribute('data-value') || '');
-                    } catch {
-                        value = input.getAttribute('data-value');
-                    }
-                } else {
-                    value = (input as HTMLInputElement).value;
-                }
-
-                if (value !== undefined) {
-                    (newFormData as Record<keyof T, string>)[name as keyof T] = value;
-                }
-            }
-        });
-
-        submitData = {
-            ...(initalData || {}),
-            ...formData,
-            ...newFormData
-        };
+        const submitData = getFormData(formElement);
 
         try {
-            onSubmit?.(submitData);
-
             let result;
             if (customFetch) {
-                result = await customFetch(submitData);
+                result = await customFetch(submitData as T);
             } else if (url) {
                 let finalUrl = url;
                 const fetchConfig: RequestInit = {
                     method: action,
-                    headers: {
+                    headers: rest.formData ? undefined : {
                         "Content-Type": "application/json",
                     } as HeadersInit,
                 };
 
                 if (action !== "DELETE") {
-                    fetchConfig.body = JSON.stringify(submitData);
+                    fetchConfig.body = rest.formData
+                        ? (submitData as FormData)
+                        : JSON.stringify(submitData);
                 }
 
                 const response = await fetch(finalUrl, fetchConfig);
@@ -158,13 +285,21 @@ export default function FormKit<
             } else {
                 throw new Error("Either url or customFetch must be provided");
             }
-
             onSuccess?.(result);
         } catch (error) {
+            Listener.emit('isError', error);
             onError?.(error);
         } finally {
             setLoading(false);
+            Listener.emit('isDone');
         }
+    };
+
+    const customOnSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        const formElement = e.target as HTMLFormElement;
+        const completeFormData = getFormData(formElement);
+        onSubmit?.(completeFormData as T);
     };
 
     const hasSubmitButton = React.Children.toArray(children).some((child) => {
@@ -178,9 +313,8 @@ export default function FormKit<
         <form
             action={url}
             method={action}
-            onSubmit={handleSubmit}
+            onSubmit={onSubmit ? customOnSubmit : handleSubmit}
             autoComplete="off"
-            {...rest}
         >
             {React.Children.map(children, (child) => {
                 if (
