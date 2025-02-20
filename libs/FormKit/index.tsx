@@ -15,7 +15,8 @@ interface Props<T extends Record<string, any> = Record<string, any>> {
     submitText?: string;
     loadingText?: string;
     formData?: boolean;
-    className?: string
+    className?: string,
+    defaultSubmitBtn?: boolean
 }
 
 type ValidateProps<T extends Record<string, any>> = Props<T> &
@@ -33,7 +34,7 @@ interface FormChildProps<T> {
 
 export default function FormKit<
     T extends Record<string, any> = Record<string, any>
->({ children, ...rest }: ValidateProps<T>) {
+>({ children, defaultSubmitBtn = true, ...rest }: ValidateProps<T>) {
     const {
         url,
         action = "POST",
@@ -302,7 +303,7 @@ export default function FormKit<
                 }
                 return child;
             })}
-            {!hasSubmitButton && (
+            {!hasSubmitButton && defaultSubmitBtn && (
                 <button type="submit" disabled={loading}>
                     {loading ? loadingText : submitText}
                 </button>
