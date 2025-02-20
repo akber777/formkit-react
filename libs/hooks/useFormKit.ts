@@ -2,7 +2,7 @@ import { ListenerType } from "libs/FormKit";
 import Listener from "../utils/listener.utils";
 import React from "react";
 
-export default function useFormKit() {
+export function useFormKit() {
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState<unknown>();
 
