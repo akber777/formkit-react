@@ -15,6 +15,7 @@ interface Props<T extends Record<string, any> = Record<string, any>> {
     submitText?: string;
     loadingText?: string;
     formData?: boolean;
+    className?: string
 }
 
 type ValidateProps<T extends Record<string, any>> = Props<T> &
