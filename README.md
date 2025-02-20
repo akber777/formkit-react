@@ -20,6 +20,11 @@ npm install formkit-react
 
 ```
 
+```bash
+yarn add formkit-react
+
+```
+
 ## Basic Usage
 
 ```tsx
