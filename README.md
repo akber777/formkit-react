@@ -62,6 +62,7 @@ function LoginComponent() {
 | `customFetch` | `(data: T) => Promise<any>`              | Custom fetch function                            |
 | `submitText`  | `string`                                 | Text for submit button (default: "Submit")       |
 | `loadingText` | `string`                                 | Text while submitting (default: "Submitting...") |
+| `defaultSubmitBtn` | `boolean`                                 | Text while submitting (default: "Submitting...") |
 
 ## useFormKit Hook
 

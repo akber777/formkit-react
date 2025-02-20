@@ -275,12 +275,6 @@ export default function FormKit<
         onSubmit?.(completeFormData as T);
     };
 
-    const hasSubmitButton = React.Children.toArray(children).some((child) => {
-        if (React.isValidElement(child)) {
-            return (child as { props: { type?: string } }).props.type === "submit";
-        }
-        return false;
-    });
 
     return (
         <form
@@ -303,7 +297,7 @@ export default function FormKit<
                 }
                 return child;
             })}
-            {!hasSubmitButton && defaultSubmitBtn && (
+            {defaultSubmitBtn && (
                 <button type="submit" disabled={loading}>
                     {loading ? loadingText : submitText}
                 </button>
