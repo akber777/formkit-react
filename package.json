@@ -16,10 +16,16 @@
   },
   "keywords": [
     "form",
-    "form-kit",
+    "formkit",
     "react",
+    "form-builder",
     "form-library",
-    "form-builder"
+    "form-validation",
+    "react-forms",
+    "form-handling",
+    "react-form-library",
+    "input-components",
+    "formkit-react"
   ],
   "repository": {
     "type": "git",
