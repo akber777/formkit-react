@@ -68,21 +68,26 @@ export default function FormKit<
         if (rest.formData) {
             const formData = new FormData(formElement);
 
-
             formInputs.forEach((element) => {
                 const input = element as HTMLInputElement;
-                if (input.type === 'file' && input.multiple) {
+                if (input.type === 'file') {
                     const name = input.getAttribute('name');
                     if (!name) return;
 
                     formData.delete(name);
 
-                    const arrayName = name.endsWith('[]') ? name : `${name}[]`;
-
-                    const files = input.files;
-                    if (files) {
-                        for (let i = 0; i < files.length; i++) {
-                            formData.append(arrayName, files[i]);
+                    if (input.multiple) {
+                        const arrayName = name.endsWith('[]') ? name : `${name}[]`;
+                        const files = input.files;
+                        if (files) {
+                            for (let i = 0; i < files.length; i++) {
+                                formData.append(arrayName, files[i]);
+                            }
+                        }
+                    } else {
+                        const file = input.files?.[0];
+                        if (file) {
+                            formData.append(name, file);
                         }
                     }
                 }
