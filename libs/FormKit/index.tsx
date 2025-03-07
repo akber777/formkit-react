@@ -66,7 +66,29 @@ export default function FormKit<
         });
 
         if (rest.formData) {
-            return new FormData(formElement);
+            const formData = new FormData(formElement);
+
+
+            formInputs.forEach((element) => {
+                const input = element as HTMLInputElement;
+                if (input.type === 'file' && input.multiple) {
+                    const name = input.getAttribute('name');
+                    if (!name) return;
+
+                    formData.delete(name);
+
+                    const arrayName = name.endsWith('[]') ? name : `${name}[]`;
+
+                    const files = input.files;
+                    if (files) {
+                        for (let i = 0; i < files.length; i++) {
+                            formData.append(arrayName, files[i]);
+                        }
+                    }
+                }
+            });
+
+            return formData;
         }
 
         const newFormData = {} as T;
