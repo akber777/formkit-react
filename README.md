@@ -1,4 +1,7 @@
-# FormKit
+<p align="center">
+  <img src="https://media.daily.dev/image/upload/s--0mlVuksH--/f_auto/v1741340556/posts/DEmUzENMq" alt="Formkit React" width="200"/>
+</p>
+
 
 FormKit is a flexible and powerful React form handling component that simplifies form management in React applications. It provides an intuitive API for handling form submissions, data management, and server interactions.
 
